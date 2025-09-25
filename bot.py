@@ -1,13 +1,11 @@
+import os
 import asyncio
 import logging
 from typing import Dict, List, Optional
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher, F, types
-from aiogram.filters import Command, StateFilter
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.filters import Command
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -16,25 +14,71 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Конфигурация
-BOT_TOKEN = "8412570265:AAFazLv8x5tXBm_DFI78eqcqK4bpL8qFZls"
-ADMIN_IDS = [1108726364]  # ID администраторов
-CHANNEL_ID = "@probrepost"  # ID канала для публикации
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+ADMIN_IDS = [int(x) for x in os.getenv('ADMIN_IDS', '123456789').split(',')]
+CHANNEL_ID = os.getenv('CHANNEL_ID', '@your_channel')
 
-# Хранилище данных (в реальном проекте используйте базу данных)
+# Упрощенное хранилище
 class Storage:
     def __init__(self):
-        self.pending_posts: Dict[int, Dict] = {}  # {message_id: post_data}
-        self.admin_vacations: Dict[int, bool] = {}  # {admin_id: on_vacation}
-        self.user_posts: Dict[int, int] = {}  # {user_id: pending_message_id}
+        self.pending_posts = {}
+        self.admin_vacations = {}
+
+storage = Storage()
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher()
+
+def is_admin(user_id: int) -> bool:
+    return user_id in ADMIN_IDS
+
+def create_admin_keyboard(post_id: int) -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(InlineKeyboardButton(text="✅ Принять", callback_data=f"approve_{post_id}"))
+    keyboard.add(InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{post_id}"))
+    return keyboard.as_markup()
+
+@dp.message(Command("start"))
+async def cmd_start(message: Message):
+    if is_admin(message.from_user.id):
+        await message.answer("👋 Добро пожаловать, администратор!")
+    else:
+        await message.answer("👋 Отправьте мне пост для модерации!")
+
+@dp.message(F.text)
+async def handle_text_message(message: Message):
+    if message.from_user.is_bot:
+        return
         
-    async def add_pending_post(self, user_message: Message, forwarded_to_admin: Message):
-        post_data = {
-            'user_id': user_message.from_user.id,
-            'user_message_id': user_message.message_id,
-            'admin_message_id': forwarded_to_admin.message_id,
-            'content': user_message,
-            'timestamp': datetime.now()
-        }
+    if is_admin(message.from_user.id):
+        return
+    
+    await message.answer("⏳ Ваш текст отправлен на модерацию!")
+    logger.info(f"Получен пост от пользователя {message.from_user.id}")
+
+@dp.callback_query(F.data.startswith("approve_"))
+async def approve_post(callback: types.CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("❌ Доступ запрещен.")
+        return
+        
+    await callback.answer("✅ Пост одобрен!")
+    await callback.message.edit_text("✅ Пост одобрен и опубликован!")
+
+@dp.callback_query(F.data.startswith("reject_"))
+async def reject_post(callback: types.CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("❌ Доступ запрещен.")
+        return
+        
+    await callback.answer("❌ Пост отклонен!")
+    await callback.message.edit_text("❌ Пост отклонен!")
+
+async def main():
+    logger.info("Запуск бота...")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())        }
         self.pending_posts[forwarded_to_admin.message_id] = post_data
         self.user_posts[user_message.from_user.id] = forwarded_to_admin.message_id
         
