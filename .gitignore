@@ -1,0 +1,80 @@
+# 🔐 Секреты и конфиги
+.env
+.env.local
+.env.*.local
+config.local.py
+*.secret
+
+# 🗄️ Базы данных
+bot.db
+*.db
+*.sqlite
+*.sqlite3
+/tmp/
+
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 🌳 Виртуальное окружение
+venv/
+ENV/
+env/
+.venv
+
+# 📝 IDE и редакторы
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# 🍎 macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 🪟 Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# 📋 Логи
+*.log
+logs/
+
+# ️ Временные файлы
+*.tmp
+*.temp
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 📦 Docker (если вдруг)
+.dockerignore
+docker-compose*.yml
+
+# 🎯 Render специфичное
+render.yaml.bak
